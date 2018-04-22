@@ -23,8 +23,7 @@ Usage
 ---
 
 ```php
-$handler = new \SessionHandler();
-$router->add(Jasny\SessionMiddleware($handler));
+$router->add(Jasny\SessionMiddleware());
 
 $response = $router->handle($request);
 ```
@@ -32,7 +31,7 @@ $response = $router->handle($request);
 Get the session object from the PSR-7 ServerRequest object and use it as array
 
 ```php
-$session = $request->getAttribute('session-middleware');
+$session = $request->getAttribute('session');
 $session['foo.bar'] = 10;
 
 if (isset($session['foo.user'])) {
@@ -40,13 +39,15 @@ if (isset($session['foo.user'])) {
 }
 ```
 
+Use `$session->abort()` to abort writing the changes and `$session->destroy()` to destroy the session.
+
 Testing
 ---
 
-When running tests, you can injecting an `ArrayObject` as session in the request before passing it to the middleware
+When running tests, you can injecting a new `Session` object in the request before passing it to the middleware.
 
 ```php
-$session = new \ArrayObject([
+$session = new Jasny\Session([
   'foo.user' => 'john@example.com'
 ]);
 
@@ -54,4 +55,3 @@ $response = $router->handler($request->withAttribute('session', $session));
 ```
 
 The session middleware will ignore a session object that wasn't created by the middleware.
-

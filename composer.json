@@ -15,7 +15,8 @@
         "source": "https://github.com/jasny/session-middleware"
     },
     "require": {
-        "php": ">=7.0.0"
+        "php": ">=7.0.0",
+        "psr/http-server-middleware": "^1.0"
     },
     "require-dev": {
         "jasny/php-code-quality": "^2.0"
