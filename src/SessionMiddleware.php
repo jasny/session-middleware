@@ -77,9 +77,6 @@ class SessionMiddleware implements MiddlewareInterface
         $this->handler = new SessionHandler();
         $this->idGenerator = $this->handler;
         $this->cookieParams = session_get_cookie_params();
-        
-        $this->encode = new Session\Encoder();
-        $this->decode = new Session\Decoder();
     }
 
     /**
@@ -152,6 +149,33 @@ class SessionMiddleware implements MiddlewareInterface
     
     
     /**
+     * Encode session data
+     * 
+     * @param array $data
+     * @return string
+     */
+    protected function encode(array $data): string
+    {
+        $this->encode = $this->encode ?? new Session\Encoder();
+        
+        return call_user_func($this->encode, $data);
+    }
+    
+    /**
+     * Decode session data
+     * 
+     * @param string $encoded
+     * @return array
+     */
+    protected function decode(string $encoded): array
+    {
+        $this->decode = $this->decode ?? new Session\Decoded();
+        
+        return call_user_func($this->decode, $encoded);
+    }
+    
+    
+    /**
      * Create or load a session.
      * 
      * @param ServerRequestInterface $request
@@ -164,7 +188,7 @@ class SessionMiddleware implements MiddlewareInterface
         if (isset($cookies[$this->name])) {
             $sessionId = $cookies[$this->name];
             $encodedData = $this->handler->read($sessionId);
-            $data = !empty($encodedData) ? call_user_func($this->decode, $encodedData) : [];
+            $data = !empty($encodedData) ? $this->decode($encodedData) : [];
         } else {
             $sessionId = $this->idGenerator->create_sid();
             $data = [];
@@ -216,7 +240,7 @@ class SessionMiddleware implements MiddlewareInterface
             return $response;
         }
         
-        $encodedData = call_user_func($this->encode, $session->getData());
+        $encodedData = $this->encode($session->getData());
         $this->handler->write($sessionId, $encodedData);
 
         return $response->withAddedHeader('Set-Cookie', $this->getCookieHeader($sessionId));
