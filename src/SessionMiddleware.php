@@ -282,7 +282,7 @@ class SessionMiddleware implements MiddlewareInterface
     }
     
     /**
-     * In/out middleware support
+     * Double pass middleware support
      * 
      * @param ServerRequestInterface $request
      * @param ResponseInterface      $response
