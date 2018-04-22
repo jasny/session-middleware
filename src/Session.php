@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Jasny;
 
 use ArrayObject;
+use Jasny\SessionInterface;
+use Jasny\SessionFactoryInterface;
 
 /**
  * Session data as object
  */
-class Session extends ArrayObject implements SessionInterface
+class Session extends ArrayObject implements SessionInterface, SessionFactoryInterface
 {
     /**
      * @var string

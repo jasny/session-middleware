@@ -10,15 +10,6 @@ namespace Jasny;
 interface SessionInterface extends \ArrayAccess
 {
     /**
-     * Factory method
-     * 
-     * @param string $id
-     * @param array  $data
-     * @return SessionInterface
-     */
-    public function create(string $id, array $data): self;
-    
-    /**
      * Get the session id
      * 
      * @return string

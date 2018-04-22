@@ -10,13 +10,16 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Jasny\Session;
 use Jasny\SessionInterface;
+use Jasny\SessionFactoryInterface;
 use SessionHandler;
 use SessionHandlerInterface;
 use SessionIdInterface;
 use BadMethodCallException;
 
 /**
- * Load and store sessions using a session handler
+ * Load and store sessions using a session handler.
+ * 
+ * Note: This middleware is an immutable object.
  */
 class SessionMiddleware implements MiddlewareInterface
 {
@@ -46,9 +49,9 @@ class SessionMiddleware implements MiddlewareInterface
     
     /**
      * Base session (will be cloned)
-     * @var SessionInterface
+     * @var SessionFactoryInterface
      */
-    protected $baseSession;
+    protected $sessionFactory;
     
     /**
      * Method to encode the session
@@ -65,39 +68,88 @@ class SessionMiddleware implements MiddlewareInterface
     
     /**
      * Class constructor
-     * 
-     * @param string                  $name
-     * @param SessionHandlerInterface $handler
-     * @param SessionIdInterface      $idGenerator
-     * @param SessionInterface        $baseSession
-     * @param array                   $cookieParams
-     * @param callable                $encode
-     * @param callable                $decode
      */
-    public function __construct(
-        string $name = null,
-        SessionHandlerInterface $handler = null,
-        SessionIdInterface $idGenerator = null,
-        SessionInterface $baseSession = null,
-        array $cookieParams = null,
-        callable $encode = null,
-        callable $decode = null
-    )
+    public function __construct()
     {
-        if (isset($handler) && !isset($idGenerator) && !$handler instanceof SessionIdInterface) {
+        $this->sessionFactory = new Session();
+        
+        $this->name = session_name();
+        $this->handler = new SessionHandler();
+        $this->idGenerator = $this->handler;
+        $this->cookieParams = session_get_cookie_params();
+        
+        $this->encode = new Session\Encoder();
+        $this->decode = new Session\Decoder();
+    }
+
+    /**
+     * Clone the middleware and set properties
+     * 
+     * @param array $properties
+     * @return static
+     */
+    private function cloneAndSet(array $properties): self
+    {
+        $middleware = clone $this;
+        
+        foreach ($properties as $key => $value) {
+            $middleware->$key = $value;
+        }
+        
+        return $middleware;
+    }
+    
+    /**
+     * Get middleware with specific session factory
+     * 
+     * @param SessionFactoryInterface $sessionFactory
+     * @return static
+     */
+    public function withSessionFactory(SessionFactoryInterface $sessionFactory): self
+    {
+        return $this->cloneAndSet(compact('sessionFactory'));
+    }
+    
+    /**
+     * Get middleware with specific session parameters.
+     * 
+     * @param string $name
+     * @param array $cookieParams
+     * @return static
+     */
+    public function withSessionParams(string $name, array $cookieParams = null): self
+    {
+        return $this->cloneAndSet(['name' => $name, 'cookieParams' => $cookieParams ?? $this->cookieParams]);
+    }
+    
+    /**
+     * Get middleware with a specific session handler
+     * 
+     * @param SessionHandlerInterface $handler
+     * @param SessionIdInterface      $idgen
+     * @return static
+     */
+    public function withSessionHandler(SessionHandlerInterface $handler, SessionIdInterface $idgen = null): self
+    {
+        if (!isset($idgen) && !$handler instanceof SessionIdInterface) {
             throw new BadMethodCallException("Handler can't generate a session id and no generator specified");
         }
         
-        $this->name = $name ?? session_name();
-        $this->handler = $handler ?? new SessionHandler();
-        $this->idGenerator = $idGenerator ?? $handler;
-        $this->baseSession = $baseSession ?? new Session();
-        $this->cookieParams = $cookieParams ?? session_get_cookie_params();
-        
-        $this->encode = $encode ?? new Session\Encoder();
-        $this->decode = $decode ?? new Session\Decoder();
+        return $this->cloneAndSet(['handler' => $handler, 'idGenerator' => $idgen ?? $handler]);
     }
-
+    
+    /**
+     * Get middleware with specific encoder and decoder
+     * 
+     * @param callable $encode
+     * @param callable $decode
+     * @return static
+     */
+    public function withEncoder(callable $encode, callable $decode): self
+    {
+        return $this->cloneAndSet(compact('encode', 'decode'));
+    }
+    
     
     /**
      * Create or load a session.
@@ -118,7 +170,7 @@ class SessionMiddleware implements MiddlewareInterface
             $data = [];
         }
         
-        return $this->baseSession->create($sessionId, $data);
+        return $this->sessionFactory->create($sessionId, $data);
     }
     
     /**

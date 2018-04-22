@@ -8,6 +8,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Jasny\SessionInterface;
+use Jasny\SessionFactoryInterface;
 use SessionHandler;
 use SessionHandlerInterface;
 use SessionIdInterface;
@@ -29,13 +30,17 @@ class SessionMiddlewareTest extends TestCase
         
         $session = $this->createMock(SessionInterface::class);
         
-        $baseSession = $this->createMock(SessionInterface::class);
-        $baseSession->expects($this->once())->method('create')->with('00000', [])->willReturn($session);
+        $sessionFactory = $this->createMock(SessionFactoryInterface::class);
+        $sessionFactory->expects($this->once())->method('create')->with('00000', [])->willReturn($session);
         
         $encode = $this->createCallbackMock($this->never());
         $decode = $this->createCallbackMock($this->never());
         
-        $middleware = new SessionMiddleware('ses', $handler, $idgen, $baseSession, [], $encode, $decode);
+        $middleware = (new SessionMiddleware())
+            ->withSessionParams('ses', [])
+            ->withSessionHandler($handler, $idgen)
+            ->withSessionFactory($sessionFactory)
+            ->withEncoder($encode, $decode);
         
         $request = $this->createMock(ServerRequestInterface::class);
         $request->expects($this->once())->method('getCookieParams')->willReturn([]);
@@ -55,14 +60,18 @@ class SessionMiddlewareTest extends TestCase
         
         $session = $this->createMock(SessionInterface::class);
         
-        $baseSession = $this->createMock(SessionInterface::class);
-        $baseSession->expects($this->once())->method('create')->with('12345', ['foo' => 'bar'])
+        $sessionFactory = $this->createMock(SessionFactoryInterface::class);
+        $sessionFactory->expects($this->once())->method('create')->with('12345', ['foo' => 'bar'])
             ->willReturn($session);
                 
         $encode = $this->createCallbackMock($this->never());
         $decode = $this->createCallbackMock($this->once(), ['foo=bar'], ['foo' => 'bar']);
         
-        $middleware = new SessionMiddleware('ses', $handler, $idgen, $baseSession, [], $encode, $decode);
+        $middleware = (new SessionMiddleware())
+            ->withSessionParams('ses', [])
+            ->withSessionHandler($handler, $idgen)
+            ->withSessionFactory($sessionFactory)
+            ->withEncoder($encode, $decode);
         
         $request = $this->createMock(ServerRequestInterface::class);
         $request->expects($this->once())->method('getCookieParams')->willReturn(['ses' => '12345']);
@@ -103,7 +112,7 @@ class SessionMiddlewareTest extends TestCase
         $handler->expects($this->once())->method('write')->with('12345', 'foo=bar');
         
         $idgen = $this->createMock(SessionIdInterface::class);
-        $baseSession = $this->createMock(SessionInterface::class);
+        $sessionFactory = $this->createMock(SessionFactoryInterface::class);
                 
         $encode = $this->createCallbackMock($this->once(), [['foo' => 'bar']], 'foo=bar');
         $decode = $this->createCallbackMock($this->never());
@@ -114,7 +123,11 @@ class SessionMiddlewareTest extends TestCase
         $session->expects($this->any())->method('isDestroyed')->willReturn(false);
         $session->expects($this->any())->method('isAborted')->willReturn(false);
 
-        $middleware = new SessionMiddleware('ses', $handler, $idgen, $baseSession, $cookieParams, $encode, $decode);
+        $middleware = (new SessionMiddleware())
+            ->withSessionParams('ses', $cookieParams)
+            ->withSessionHandler($handler, $idgen)
+            ->withSessionFactory($sessionFactory)
+            ->withEncoder($encode, $decode);
 
         $newResponse = $this->createMock(ResponseInterface::class);
         
@@ -133,7 +146,7 @@ class SessionMiddlewareTest extends TestCase
         $handler->expects($this->never())->method('write');
         
         $idgen = $this->createMock(SessionIdInterface::class);
-        $baseSession = $this->createMock(SessionInterface::class);
+        $sessionFactory = $this->createMock(SessionFactoryInterface::class);
                 
         $encode = $this->createCallbackMock($this->never());
         $decode = $this->createCallbackMock($this->never());
@@ -144,7 +157,11 @@ class SessionMiddlewareTest extends TestCase
         $session->expects($this->any())->method('isDestroyed')->willReturn(true);
         $session->expects($this->any())->method('isAborted')->willReturn(false);
 
-        $middleware = new SessionMiddleware('ses', $handler, $idgen, $baseSession, [], $encode, $decode);
+        $middleware = (new SessionMiddleware())
+            ->withSessionParams('ses', [])
+            ->withSessionHandler($handler, $idgen)
+            ->withSessionFactory($sessionFactory)
+            ->withEncoder($encode, $decode);
 
         $newResponse = $this->createMock(ResponseInterface::class);
         
@@ -163,7 +180,7 @@ class SessionMiddlewareTest extends TestCase
         $handler->expects($this->never())->method('write');
         
         $idgen = $this->createMock(SessionIdInterface::class);
-        $baseSession = $this->createMock(SessionInterface::class);
+        $sessionFactory = $this->createMock(SessionFactoryInterface::class);
                 
         $encode = $this->createCallbackMock($this->never());
         $decode = $this->createCallbackMock($this->never());
@@ -174,7 +191,11 @@ class SessionMiddlewareTest extends TestCase
         $session->expects($this->any())->method('isDestroyed')->willReturn(false);
         $session->expects($this->any())->method('isAborted')->willReturn(true);
 
-        $middleware = new SessionMiddleware('ses', $handler, $idgen, $baseSession, [], $encode, $decode);
+        $middleware = (new SessionMiddleware())
+            ->withSessionParams('ses', [])
+            ->withSessionHandler($handler, $idgen)
+            ->withSessionFactory($sessionFactory)
+            ->withEncoder($encode, $decode);
 
         $response = $this->createMock(ResponseInterface::class);
         $response->expects($this->never())->method('withAddedHeader');
@@ -183,6 +204,7 @@ class SessionMiddlewareTest extends TestCase
         
         $this->assertSame($response, $ret);
     }
+    
     
     public function testProcess()
     {
@@ -266,24 +288,18 @@ class SessionMiddlewareTest extends TestCase
     /**
      * @expectedException BadMethodCallException
      */
-    public function testConstructNoSessionIdGenerator()
+    public function testWithSessionHandlerNoSessionIdGenerator()
     {
         $handler = $this->createMock(SessionHandlerInterface::class);
-        $session = $this->createMock(SessionInterface::class);
-        $encode = $this->createCallbackMock($this->never());
-        $decode = $this->createCallbackMock($this->never());
         
-        new SessionMiddleware('ses', $handler, null, $session, [], $encode, $decode);
+        (new SessionMiddleware())->withSessionHandler($handler);
     }
 
-    public function testConstructHandlerIsSessionIdGenerator()
+    public function testWithSessionHandlerIsSessionIdGenerator()
     {
         $handler = $this->createMock(SessionHandler::class);
-        $session = $this->createMock(SessionInterface::class);
-        $encode = $this->createCallbackMock($this->never());
-        $decode = $this->createCallbackMock($this->never());
         
-        $middleware = new SessionMiddleware('ses', $handler, null, $session, [], $encode, $decode);
+        $middleware = (new SessionMiddleware())->withSessionHandler($handler);
         
         $this->assertAttributeSame($handler, 'idGenerator', $middleware);
     }
