@@ -17,11 +17,6 @@ use Jasny\Session\FlashFactoryInterface;
 class Session extends ArrayObject implements SessionInterface, SessionFactoryInterface
 {
     /**
-     * @var FlashFactoryInterface
-     */
-    protected $flashFactory;
-
-    /**
      * @var string
      */
     protected $id = '';
@@ -48,25 +43,6 @@ class Session extends ArrayObject implements SessionInterface, SessionFactoryInt
     {
         $session = new static($data);
         $session->id = $id;
-        $session->flashFactory = $this->flashFactory;
-
-        return $session;
-    }
-
-    /**
-     * Get session object with new flash interface.
-     *
-     * @param FlashFactoryInterface $flashFactory
-     * @return static
-     */
-    public function withFlash(FlashFactoryInterface $flashFactory): self
-    {
-        if ($this->flashFactory === $flashFactory) {
-            return $this;
-        }
-
-        $session = clone $this;
-        $session->flashFactory = $flashFactory;
 
         return $session;
     }
