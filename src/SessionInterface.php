@@ -25,8 +25,10 @@ interface SessionInterface extends \ArrayAccess
     
     /**
      * Discard session changes
+     * 
+     * @return void
      */
-    public function abort();
+    public function abort(): void;
 
     /**
      * Check if the session is aborted
@@ -38,8 +40,10 @@ interface SessionInterface extends \ArrayAccess
     
     /**
      * Destroys all data registered to a session
+     * 
+     * @return void
      */
-    public function destroy();
+    public function destroy(): void;
     
     /**
      * Check if the session is destroyed

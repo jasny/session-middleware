@@ -27,8 +27,9 @@ Usage
 ---
 
 ```php
-$router->add(new Jasny\SessionMiddleware());
+use Jasny\SessionMiddleware;
 
+$router->add(new SessionMiddleware());
 $response = $router->handle($request);
 ```
 
@@ -45,23 +46,65 @@ if (isset($session['foo.user'])) {
 
 Use `$session->abort()` to abort writing the changes and `$session->destroy()` to destroy the session.
 
+### Flash
+
+The session flash object can be used to pass a message to the next request. It is automatically removed from the session
+after it is used. A typical use case is to store information in a database, than redirect to a page and showing a
+success message. Or if the information could not be saved, to show an error message.
+
+The flash information contains a type (e.g. `success`, `error`, `info`, `warning`) and a message. Optionally a
+content type can be specified for the message. This defaults to `text/plain`.
+
+```php
+use Jasny\Session;
+
+$flash = new Session\Flash($session);
+$session->set('success', 'The information has been saved');
+```
+
+In the next request
+
+```php
+use Jasny\Session;
+
+$flash = new Session\Flash($session);
+echo $flash->getType(), ': ', $flash->getMessage();
+```
+
+_Displaying the message is outside the scope of this library._
+
 ### Dependency injection
 
 If you want to use modified services, you can use the `with...` methods for dependency injection.
 
 ```php
-$middleware = (new Jasny\SessionMiddleware())
+use Jasny\Session;
+use Jasny\SessionMiddleware;
+
+$sessionFactory = new Session(); // Session implementation has factory method
+
+$middleware = (new SessionMiddleware())
   ->withSessionParams($sessionName, $cookieParams)
   ->withSessionHandler($handler)
   ->withSessionFactory($sessionFactory)
   ->withEncoder($encode, $decode);
 ```
 
+_Note that `SessionMiddleware` is an immutable object. The `with...` methods clone the middleware and only modify the
+clone._
+
 If the session handler doesn't implement `SessionIdInterface`, you need to pass a service that can generate session ids
 as second parameter.
 
-_Note that `SessionMiddleware` is an immutable object. The `with...` methods clone the middleware and only modify the
-clone._
+A `Session` object has a factory method `create(string id, array data)` to create a new session. This method can be used
+to create a base `Session` that is copied on use. This prevents having to have to write and extend a separate factory
+class.
+
+You should always depend on `SessionInterface` and `SessionFactoryInterface` rather than the `Session` class.
+
+The `Session\Flash` also has a factory method. You can use a `Session\Flash` object for dependency injection. You should
+always depend on `Session\FlashInterface` and `Session\FlashFactoryInterface` rather than the `Session\Flash` class.
+
 
 Testing
 ---
