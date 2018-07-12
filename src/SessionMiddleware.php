@@ -85,7 +85,7 @@ class SessionMiddleware implements MiddlewareInterface
      * @param array $properties
      * @return static
      */
-    private function cloneAndSet(array $properties): self
+    protected function cloneAndSet(array $properties): self
     {
         $middleware = clone $this;
         
