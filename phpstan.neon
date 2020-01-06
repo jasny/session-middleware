@@ -4,6 +4,8 @@ parameters:
         - src
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-        - /^Variable property access/
+        -
+          message: '/Parameter #\d \$offset \(string\) of method (.+) should be contravariant with parameter \$offset \(mixed\) of method ArrayAccess<mixed,mixed>/'
+          path: src/GlobalSession.php
 includes:
   	- vendor/phpstan/phpstan-strict-rules/rules.neon

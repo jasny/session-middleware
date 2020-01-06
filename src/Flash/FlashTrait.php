@@ -11,7 +11,7 @@ use Jasny\Session\SessionInterface;
  */
 trait FlashTrait
 {
-    protected FlashBag $flashes;
+    protected FlashBag $flashBag;
 
     /**
      * Add a flash message.
@@ -27,15 +27,13 @@ trait FlashTrait
 
     /**
      * Get the bag with flash messages.
-     *
-     * @return FlashBag
      */
     public function flashes(): FlashBag
     {
         /** @var SessionInterface $session */
         $session = $this;
-        $this->flashes = $this->flashes->withSession($session);
+        $this->flashBag = $this->flashBag->withSession($session);
 
-        return $this->flashes;
+        return $this->flashBag;
     }
 }

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Jasny\Session\Tests\Flash;
 
 use Jasny\PHPUnit\ExpectWarningTrait;
+use Jasny\Session\Flash\Flash;
 use Jasny\Session\Flash\FlashBag;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * @covers \Jasny\Session\Flash\Flash
  * @covers \Jasny\Session\Flash\FlashBag
  */
 class FlashBagTest extends TestCase
@@ -31,8 +33,8 @@ class FlashBagTest extends TestCase
         $this->assertArrayNotHasKey('flash', $session->getArrayCopy());
 
         $expected = [
-            ['type' => 'notice', 'message' => 'one', 'contentType' => 'text/html'],
-            ['type' => '', 'message' => 'two', 'contentType' => 'text/plain'],
+            new Flash('notice', 'one', 'text/html'),
+            new Flash('', 'two', 'text/plain'),
         ];
 
         $this->assertEquals($expected, $bag->getArrayCopy());
@@ -74,7 +76,7 @@ class FlashBagTest extends TestCase
         $this->assertArrayNotHasKey('flash', $session->getArrayCopy());
 
         $expected = [
-            ['type' => '', 'message' => 'two', 'contentType' => 'text/plain'],
+            new Flash('', 'two', 'text/plain'),
         ];
 
         $this->assertEquals($expected, $bag->getArrayCopy());

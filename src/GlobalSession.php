@@ -14,18 +14,19 @@ class GlobalSession implements SessionInterface
 {
     use FlashTrait;
 
+    /** @var array<string,mixed> */
     protected array $options;
 
     /**
      * Session constructor.
      *
      * @param array<string,mixed> $options  Passed to session_start()
-     * @param FlashBag            $flashes
+     * @param FlashBag|null       $flashBag
      */
-    public function __construct(array $options = [], ?FlashBag $flashes = null)
+    public function __construct(array $options = [], ?FlashBag $flashBag = null)
     {
         $this->options = $options;
-        $this->flashes = $flashes ?? new FlashBag();
+        $this->flashBag = $flashBag ?? new FlashBag();
     }
 
 
@@ -82,9 +83,9 @@ class GlobalSession implements SessionInterface
 
     /**
      * @param string $offset
-     * @return mixed
+     * @return bool
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         $this->assertStarted();
 
@@ -106,7 +107,7 @@ class GlobalSession implements SessionInterface
      * @param string $offset
      * @param mixed  $value
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $this->assertStarted();
 
@@ -116,7 +117,7 @@ class GlobalSession implements SessionInterface
     /**
      * @param string $offset
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         $this->assertStarted();
 
@@ -128,7 +129,7 @@ class GlobalSession implements SessionInterface
      *
      * @throws \RuntimeException
      */
-    protected function assertStarted()
+    protected function assertStarted(): void
     {
         if (session_status() !== \PHP_SESSION_ACTIVE) {
             throw new \RuntimeException("Session not started");

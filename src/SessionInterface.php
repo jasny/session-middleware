@@ -8,6 +8,8 @@ use Jasny\Session\Flash\FlashBag;
 
 /**
  * Session data as object.
+ *
+ * @extends \ArrayAccess<string,mixed>
  */
 interface SessionInterface extends \ArrayAccess
 {

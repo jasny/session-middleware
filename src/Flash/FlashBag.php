@@ -6,12 +6,16 @@ namespace Jasny\Session\Flash;
 
 /**
  * Flash messages are stored in the session and cleared after they're used.
+ *
+ * @implements \IteratorAggregate<int,Flash>
  */
 class FlashBag implements \IteratorAggregate
 {
+    /** @var \ArrayAccess<string,mixed> */
     protected \ArrayAccess $session;
     protected string $key;
 
+    /** @var Flash[] */
     protected array $entries = [];
 
     /**
@@ -25,6 +29,8 @@ class FlashBag implements \IteratorAggregate
 
     /**
      * Get iterator for entries.
+     *
+     * @return \ArrayIterator<int,Flash>
      */
     public function getIterator(): \Traversable
     {
@@ -33,6 +39,8 @@ class FlashBag implements \IteratorAggregate
 
     /**
      * Get all entries as array.
+     *
+     * @return Flash[]
      */
     public function getArrayCopy(): array
     {
@@ -43,6 +51,7 @@ class FlashBag implements \IteratorAggregate
     /**
      * Get copy with session object.
      *
+     * @param \ArrayAccess<string,mixed> $session
      * @return static
      */
     public function withSession(\ArrayAccess $session): self
@@ -82,7 +91,7 @@ class FlashBag implements \IteratorAggregate
     /**
      * Initialize the entries.
      *
-     * @param array $entries
+     * @param array<mixed> $entries
      */
     protected function initEntries(array $entries): void
     {
@@ -94,7 +103,11 @@ class FlashBag implements \IteratorAggregate
                 continue;
             }
 
-            $this->entries[] = $entry + ['type' => '', 'contentType' => 'text/plain'];
+            $this->entries[] = new Flash(
+                $entry['type'] ?? '',
+                $entry['message'],
+                $entry['contentType'] ?? 'text/plain'
+            );
         }
 
         if ($invalid > 0) {
@@ -128,7 +141,7 @@ class FlashBag implements \IteratorAggregate
     public function reissue(): self
     {
         $this->session[$this->key] = array_merge(
-            $this->entries,
+            array_map(fn(Flash $flash) => $flash->toAssoc(), $this->entries),
             $this->session[$this->key] ?? [],
         );
 

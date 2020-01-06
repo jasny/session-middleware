@@ -8,22 +8,28 @@ use Jasny\Session\Flash\FlashBag;
 use Jasny\Session\Flash\FlashTrait;
 
 /**
- * Session that only exists in local memory
+ * Session that only exists in local memory.
+ *
+ * @extends \ArrayObject<string,mixed>
  */
 class MockSession extends \ArrayObject implements SessionInterface
 {
     use FlashTrait;
 
+    /** @var array<string,mixed> */
     protected array $initialData;
     protected int $status = \PHP_SESSION_ACTIVE;
 
     /**
      * MockSession constructor.
+     *
+     * @param array<string,mixed> $input
+     * @param FlashBag|null       $flashBag
      */
-    public function __construct(array $input = [], ?FlashBag $flashes = null)
+    public function __construct(array $input = [], ?FlashBag $flashBag = null)
     {
         $this->initialData = $input;
-        $this->flashes = $flashes ?? new FlashBag();
+        $this->flashBag = $flashBag ?? new FlashBag();
 
         parent::__construct($input);
     }
