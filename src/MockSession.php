@@ -75,4 +75,15 @@ class MockSession extends \ArrayObject implements SessionInterface
     {
         $this->exchangeArray([]);
     }
+
+
+    /**
+     * @param string $offset
+     */
+    public function offsetUnset($offset): void
+    {
+        if (parent::offsetExists($offset)) {
+            parent::offsetUnset($offset);
+        }
+    }
 }
