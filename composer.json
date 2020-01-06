@@ -1,7 +1,7 @@
 {
     "name": "jasny/session-middleware",
-    "description": "",
-    "keywords": ["psr-15", "middleware", "psr-7", "sessions"],
+    "description": "PSR-15 session middleware with support for mock sessions",
+    "keywords": ["middleware", "sessions", "psr-7", "psr-15"],
     "license": "MIT",
     "authors": [
         {
@@ -15,16 +15,37 @@
         "source": "https://github.com/jasny/session-middleware"
     },
     "require": {
-        "php": "~7.1",
-        "psr/http-server-middleware": "^1.0",
-        "jasny/php-code-quality": "~2.3"
+        "php": ">=7.4.0",
+        "psr/http-server-middleware": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "~7.0"
+        "jasny/php-code-quality": "~2.6"
+    },
+    "suggest": {
+        "codeception/codeception": "PHP testing framework"
     },
     "autoload": {
         "psr-4": {
-            "Jasny\\": "src/"
+            "Jasny\\Session\\": "src/"
         }
-    }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jasny\\Session\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": [
+            "phpstan analyse",
+            "phpunit --testdox --colors=always",
+            "phpcs -p src"
+        ]
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

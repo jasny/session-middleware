@@ -2,53 +2,57 @@
 
 declare(strict_types=1);
 
-namespace Jasny;
+namespace Jasny\Session;
+
+use Jasny\Session\Flash\FlashBag;
 
 /**
- * A session object
+ * Session data as object.
  */
 interface SessionInterface extends \ArrayAccess
 {
     /**
-     * Get the session id
-     * 
-     * @return string
+     * Start the session.
+     * @see session_start()
      */
-    public function getId(): string;
-    
+    public function start(): void;
+
     /**
-     * Get session data
-     * 
-     * @return array
+     * Get the sessions status.
+     * @see session_status()
      */
-    public function getData(): array;
-    
+    public function status(): int;
+
     /**
-     * Discard session changes
-     * 
-     * @return void
+     * Write session data and end session.
+     * @see session_write_close()
+     */
+    public function stop(): void;
+
+    /**
+     * Discard session array changes and finish session.
+     * @see session_abort()
      */
     public function abort(): void;
 
+
     /**
-     * Check if the session is aborted
-     * 
-     * @return bool
+     * Clear all data from the session.
      */
-    public function isAborted(): bool;
-    
-    
+    public function clear(): void;
+
+
     /**
-     * Destroys all data registered to a session
-     * 
-     * @return void
+     * Add a flash message.
+     *
+     * @param string $type         flash type, eg. 'error', 'notice' or 'success'
+     * @param string $message      flash message
+     * @param string $contentType  mime, eg 'text/plain' or 'text/html'
      */
-    public function destroy(): void;
-    
+    public function flash(string $type, string $message, string $contentType = 'text/plain'): void;
+
     /**
-     * Check if the session is destroyed
-     * 
-     * @return bool
+     * Get the service for flash messages.
      */
-    public function isDestroyed(): bool;
+    public function flashes(): FlashBag;
 }

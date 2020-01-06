@@ -1,22 +1,18 @@
-Jasny Session middleware
+Session middleware
 ===
 
 [![Build Status](https://travis-ci.org/jasny/session-middleware.svg?branch=master)](https://travis-ci.org/jasny/session-middleware)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/jasny/session-middleware/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/jasny/session-middleware/?branch=master)
 [![Code Coverage](https://scrutinizer-ci.com/g/jasny/session-middleware/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/jasny/session-middleware/?branch=master)
-[![SensioLabsInsight](https://insight.sensiolabs.com/projects/a1a1745c-1272-46a3-9567-7bbb52acda5a/mini.png)](https://insight.sensiolabs.com/projects/a1a1745c-1272-46a3-9567-7bbb52acda5a)
-[![BCH compliance](https://bettercodehub.com/edge/badge/jasny/session-middleware?branch=master)](https://bettercodehub.com/)
 [![Packagist Stable Version](https://img.shields.io/packagist/v/jasny/session-middleware.svg)](https://packagist.org/packages/jasny/session-middleware)
 [![Packagist License](https://img.shields.io/packagist/l/jasny/session-middleware.svg)](https://packagist.org/packages/jasny/session-middleware)
 
 Using superglobals like `$_SESSION` object makes it difficult to test an application as global variables can have
-unexpected side effects. Using superglobals undermines the effort of using dependecy injection and using containers.
+unexpected side effects. Using superglobals undermines the effort of using dependency injection and using containers.
 
-The middleware creates uses PHP [SessionHandlerInterface](http://php.net/manual/en/class.sessionhandlerinterface.php)
-objects directly. By default it uses the `ext/session` handler as well as the global session name and cookie
-parameters.
-
-The middleware complies with [PSR-15](https://www.php-fig.org/psr/psr-15/). It will also work as double pass middleware.
+The middleware creates an object that wraps `$_SESSION`, which is available for dependency injection and as attribute
+of the PSR-7 `ServerRequest`. The middleware complies with [PSR-15](https://www.php-fig.org/psr/psr-15/). It will also
+work as double pass middleware.
 
 Installation
 ---
@@ -27,7 +23,7 @@ Usage
 ---
 
 ```php
-use Jasny\SessionMiddleware;
+use Jasny\Session\SessionMiddleware;
 
 $router->add(new SessionMiddleware());
 $response = $router->handle($request);
@@ -44,7 +40,7 @@ if (isset($session['foo.user'])) {
 }
 ```
 
-Use `$session->abort()` to abort writing the changes and `$session->destroy()` to destroy the session.
+Use `$session->abort()` to abort writing the changes. Call `$session->clear()` to clear all data from the session.
 
 ### Flash
 
@@ -56,67 +52,60 @@ The flash information contains a type (e.g. `success`, `error`, `info`, `warning
 content type can be specified for the message. This defaults to `text/plain`.
 
 ```php
-use Jasny\Session;
-
-$flash = new Session\Flash($session);
-$session->set('success', 'The information has been saved');
+$session->flash('success', 'The information has been saved');
 ```
 
 In the next request
 
-```php
-use Jasny\Session;
-
-$flash = new Session\Flash($session);
-echo $flash->getType(), ': ', $flash->getMessage();
+```twig
+{% for flash in app.flashes() %}
+    <div class="flash-{{ flash.type }}">
+        {{ flash.message }}
+    </div>
+{% endfor %}
 ```
 
-_Displaying the message is outside the scope of this library._
-
-### Dependency injection
-
-If you want to use modified services, you can use the `with...` methods for dependency injection.
+If `flash()` or `flashes()` is called, the flash messages are cleared from the session. To prevent this call
+`reissue()`
 
 ```php
-use Jasny\Session;
-use Jasny\SessionMiddleware;
+$session->flashes()
+    ->reissue()
+    ->add('warning', "Could not display the page");
 
-$sessionFactory = new Session(); // Session implementation has factory method
-
-$middleware = (new SessionMiddleware())
-  ->withSessionParams($sessionName, $cookieParams)
-  ->withSessionHandler($handler)
-  ->withSessionFactory($sessionFactory)
-  ->withEncoder($encode, $decode);
+header('Location: /other-page');
+exit();
 ```
 
-_Note that `SessionMiddleware` is an immutable object. The `with...` methods clone the middleware and only modify the
-clone._
-
-If the session handler doesn't implement `SessionIdInterface`, you need to pass a service that can generate session ids
-as second parameter.
-
-A `Session` object has a factory method `create(string id, array data)` to create a new session. This method can be used
-to create a base `Session` that is copied on use. This prevents having to have to write and extend a separate factory
-class.
-
-You should always depend on `SessionInterface` and `SessionFactoryInterface` rather than the `Session` class.
-
-The `Session\Flash` also has a factory method. You can use a `Session\Flash` object for dependency injection. You should
-always depend on `Session\FlashInterface` and `Session\FlashFactoryInterface` rather than the `Session\Flash` class.
+Call `$session->flashes()->clear()` to explicly clear all flash messages, both newly added (to the session) and those
+available for the current request.
 
 
 Testing
 ---
 
-When running tests, you can injecting a new `Session` object in the request before passing it to the middleware.
+When running tests, you can injecting a `MockSession` object in the server request before passing it to the middleware.
 
 ```php
-$session = new Jasny\Session([
+use Jasny\Session\MockSession;
+
+$session = new MockSession([
   'foo.user' => 'john@example.com'
 ]);
 
-$response = $router->handler($request->withAttribute('session', $session));
+$requestWithSession = $request->withAttribute('session', $session);
+$response = $router->handle($requestWithSession);
 ```
 
-The session middleware will ignore a session object that wasn't created by the middleware.
+Alternatively you can pass a session object when creating the `SessionMiddleware`. This session object will be used
+instead of the global session.
+
+```php
+use Jasny\Session\SessionMiddleware;
+use Jasny\Session\MockSession;
+
+$mockSession = new MockSession();
+
+$router->add(new SessionMiddleware($mockSession));
+$response = $router->handle($request);
+``` 
