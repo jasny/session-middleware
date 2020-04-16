@@ -28,7 +28,10 @@ abstract class AbstractSessionTest extends TestCase
         $this->assertSessionData(['foo' => 'bar', 'zoo' => 10]);
 
         $this->session->abort();
+        $this->assertEquals(PHP_SESSION_NONE, $this->session->status());
+
         $this->session->start();
+        $this->assertEquals(PHP_SESSION_ACTIVE, $this->session->status());
         $this->assertSessionData(['foo' => 'bar']);
     }
 
@@ -50,5 +53,24 @@ abstract class AbstractSessionTest extends TestCase
 
         $this->session->clear();
         $this->assertSessionData([]);
+        $this->assertEquals(PHP_SESSION_ACTIVE, $this->session->status());
+    }
+
+    public function testKill()
+    {
+        $this->assertSessionData(['foo' => 'bar']);
+
+        $this->session->kill();
+        $this->assertSessionData([]);
+        $this->assertEquals(PHP_SESSION_NONE, $this->session->status());
+    }
+
+    public function testRotate()
+    {
+        $this->assertSessionData(['foo' => 'bar']);
+
+        $this->session->rotate();
+        $this->assertSessionData([]);
+        $this->assertEquals(PHP_SESSION_ACTIVE, $this->session->status());
     }
 }

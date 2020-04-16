@@ -20,7 +20,7 @@ class GlobalSession implements SessionInterface
     /**
      * Session constructor.
      *
-     * @param array<string,mixed> $options  Passed to session_start()
+     * @param array<string,mixed> $options   Passed to session_start()
      * @param FlashBag|null       $flashBag
      */
     public function __construct(array $options = [], ?FlashBag $flashBag = null)
@@ -28,7 +28,6 @@ class GlobalSession implements SessionInterface
         $this->options = $options;
         $this->flashBag = $flashBag ?? new FlashBag();
     }
-
 
     /**
      * Start the session.
@@ -82,6 +81,57 @@ class GlobalSession implements SessionInterface
     }
 
     /**
+     * @inheritDoc
+     */
+    public function kill(): void
+    {
+        $this->assertStarted();
+
+        $this->removeCookie(session_name());
+        $_SESSION = [];
+        session_destroy();
+    }
+
+    /**
+     * Remove the session cookie.
+     * @codeCoverageIgnore
+     */
+    protected function removeCookie(string $name): void
+    {
+        if (!(bool)ini_get("session.use_cookies")) {
+            return;
+        }
+
+        $options = ['expires' => time() - 42000] + session_get_cookie_params();
+        setcookie($name, '', $options);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function rotate(?callable $copy = null): void
+    {
+        $this->assertStarted();
+
+        $data = isset($copy) ? $copy($_SESSION) : [];
+
+        $_SESSION = [];
+        $this->regenerateId(true);
+
+        $_SESSION = $data;
+    }
+
+    /**
+     * Wrapper around `session_regenerate_id()`
+     * @codeCoverageIgnore
+     */
+    protected function regenerateId(bool $delete): void
+    {
+        session_regenerate_id($delete);
+    }
+
+
+    /**
      * @param string $offset
      * @return bool
      */
@@ -124,15 +174,16 @@ class GlobalSession implements SessionInterface
         unset($_SESSION[$offset]);
     }
 
+
     /**
      * Assert that there is an active session.
      *
-     * @throws \RuntimeException
+     * @throws NoSessionException
      */
     protected function assertStarted(): void
     {
         if (session_status() !== \PHP_SESSION_ACTIVE) {
-            throw new \RuntimeException("Session not started");
+            throw new NoSessionException("Session not started");
         }
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Jasny\Session\Tests;
 
 use Jasny\Session\GlobalSession;
+use Jasny\Session\NoSessionException;
 
 /**
  * @covers \Jasny\Session\GlobalSession
@@ -15,7 +16,10 @@ class GlobalSessionTest extends AbstractSessionTest
     {
         $this->createTestSession();
 
-        $this->session = new GlobalSession();
+        $this->session = $this->getMockBuilder(GlobalSession::class)
+            ->onlyMethods(['removeCookie', 'regenerateId'])
+            ->getMock();
+
         session_start();
     }
 
@@ -62,9 +66,36 @@ class GlobalSessionTest extends AbstractSessionTest
     {
         $this->session->stop();
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(NoSessionException::class);
         $this->expectExceptionMessage("Session not started");
 
         $this->session['one'] = 1;
+    }
+
+
+    public function testKill()
+    {
+        $this->session->expects($this->once())->method('removeCookie')->with('PHPSESSID');
+
+        parent::testKill();
+
+        $this->assertNotEquals('test', session_id());
+
+        // Check if the old session is cleared
+        session_write_close();
+        session_id('test');
+        session_start();
+
+        $this->assertEquals([], $_SESSION);
+    }
+
+    /**
+     * Unable to test `session_regenerate_id` as it always fails because of headers sent.
+     */
+    public function testRotate()
+    {
+        $this->session->expects($this->once())->method('regenerateId');
+
+        parent::testRotate();
     }
 }

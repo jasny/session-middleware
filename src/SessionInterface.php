@@ -20,7 +20,7 @@ interface SessionInterface extends \ArrayAccess
     public function start(): void;
 
     /**
-     * Get the sessions status.
+     * Get the session status.
      * @see session_status()
      */
     public function status(): int;
@@ -37,11 +37,23 @@ interface SessionInterface extends \ArrayAccess
      */
     public function abort(): void;
 
-
     /**
      * Clear all data from the session.
      */
     public function clear(): void;
+
+    /**
+     * Destroy the session and remove the session cookie.
+     * @see session_destroy()
+     */
+    public function kill(): void;
+
+    /**
+     * Delete the current session and start a new one.
+     *
+     * @param callable $copy  Callback to copy data from old session.
+     */
+    public function rotate(?callable $copy = null): void;
 
 
     /**

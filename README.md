@@ -40,7 +40,20 @@ if (isset($session['foo.user'])) {
 }
 ```
 
-Use `$session->abort()` to abort writing the changes. Call `$session->clear()` to clear all data from the session.
+### Methods
+* `start()` - Start the session.
+* `status()` - Get the session status.
+* `stop()` - Write session data and end session.
+* `abort()` - Discard session array changes and finish session.
+* `clear()` - Clear all data from the session.
+* `kill()` - Destroy the session and remove the session cookie.
+* `rotate()` - Delete the current session and start a new one.
+
+When rotating a session, it's possible to copy some of the data by supplying a callback.
+
+```php
+$session->rotate(fn(array $oldSessionData) => ['tid' => $oldSessionData['tid'] ?? null]);
+```
 
 ### Flash
 

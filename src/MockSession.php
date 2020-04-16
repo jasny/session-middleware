@@ -76,6 +76,28 @@ class MockSession extends \ArrayObject implements SessionInterface
         $this->exchangeArray([]);
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function kill(): void
+    {
+        $this->initialData = [];
+        $this->exchangeArray([]);
+        $this->status = \PHP_SESSION_NONE;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function rotate(?callable $copy = null): void
+    {
+        $data = isset($copy) ? $copy($this->getArrayCopy()) : [];
+
+        $this->initialData = [];
+        $this->exchangeArray($data);
+        $this->status = \PHP_SESSION_ACTIVE;
+    }
+
 
     /**
      * @param string $offset
