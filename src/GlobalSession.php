@@ -103,6 +103,8 @@ class GlobalSession implements SessionInterface
         }
 
         $options = ['expires' => time() - 42000] + session_get_cookie_params();
+        unset($options['lifetime']);
+
         setcookie($name, '', $options);
     }
 
