@@ -40,7 +40,12 @@ if (isset($session['foo.user'])) {
 }
 ```
 
+The session is started by the middleware.
+
 ### Methods
+
+The session object implements `SessionInterface` and has the following methods;
+
 * `start()` - Start the session.
 * `status()` - Get the session status.
 * `stop()` - Write session data and end session.
@@ -53,6 +58,29 @@ When rotating a session, it's possible to copy some of the data by supplying a c
 
 ```php
 $session->rotate(fn(array $oldSessionData) => ['tid' => $oldSessionData['tid'] ?? null]);
+```
+
+### Session options
+
+By default, the middleware will create a `GlobalSession` object. This object is linked to PHPs session management including
+`$_SESSION`. You can manually instantiate this object, supplying session options. These options are passed to 
+`session_start()`.
+
+```php
+use Jasny\Session\GlobalSession;
+use Jasny\Session\SessionMiddleware;
+
+$session = new GlobalSession([
+    'cookie_lifetime' => 0,
+    'cookie_httponly' => 1,
+    'use_only_cookies' => 1,
+    'use_trans_sid' => 0,
+    'cookie_secure' => (bool)($_SERVER['HTTPS'] ?? false),
+    'cookie_samesite' => 'Lax',
+]);
+
+$router->add(new SessionMiddleware($session));
+$response = $router->handle($request);
 ```
 
 ### Flash
